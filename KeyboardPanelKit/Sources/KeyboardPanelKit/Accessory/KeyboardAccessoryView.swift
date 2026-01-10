@@ -4,26 +4,23 @@ public struct KeyboardAccessoryView: View {
     @Binding var text: String
     @FocusState.Binding var isInputFocused: Bool
     let panelItems: [KeyboardPanelItem]
-    let currentPanelState: KeyboardPanelState
+    let context: KeyboardPanelContext
     let configuration: KeyboardPanelAccessoryConfiguration
-    let onPanelItemTap: (KeyboardPanelItem) -> Void
     let onSend: () -> Void
     
     public init(
         text: Binding<String>,
         isInputFocused: FocusState<Bool>.Binding,
         panelItems: [KeyboardPanelItem],
-        currentPanelState: KeyboardPanelState,
+        context: KeyboardPanelContext,
         configuration: KeyboardPanelAccessoryConfiguration = .default,
-        onPanelItemTap: @escaping (KeyboardPanelItem) -> Void,
         onSend: @escaping () -> Void
     ) {
         self._text = text
         self._isInputFocused = isInputFocused
         self.panelItems = panelItems
-        self.currentPanelState = currentPanelState
+        self.context = context
         self.configuration = configuration
-        self.onPanelItemTap = onPanelItemTap
         self.onSend = onSend
     }
     
@@ -59,9 +56,9 @@ public struct KeyboardAccessoryView: View {
         HStack(spacing: configuration.spacing) {
             ForEach(panelItems) { item in
                 Button {
-                    onPanelItemTap(item)
+                    handleItemTap(item)
                 } label: {
-                    itemIcon(for: item)
+                    item.icon(for: context.panelState)
                         .font(.system(size: 22))
                         .foregroundColor(configuration.colors.buttonTint)
                         .frame(width: configuration.buttonSize, height: configuration.buttonSize)
@@ -70,12 +67,13 @@ public struct KeyboardAccessoryView: View {
         }
     }
     
-    private func itemIcon(for item: KeyboardPanelItem) -> Image {
-        if currentPanelState.currentPanelId == item.id,
-           let selectedIcon = item.selectedIcon {
-            return selectedIcon
+    private func handleItemTap(_ item: KeyboardPanelItem) {
+        if context.currentPanelId == item.id {
+            context.requestShowKeyboard()
+        } else {
+            isInputFocused = false
+            context.showPanel(item.id)
         }
-        return item.icon
     }
     
     private var sendButton: some View {

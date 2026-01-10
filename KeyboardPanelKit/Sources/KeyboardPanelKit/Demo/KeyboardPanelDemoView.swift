@@ -141,3 +141,136 @@ public struct KeyboardPanelDemoView: View {
         )
     }
 }
+
+public struct CustomToolbarDemoView: View {
+    @StateObject private var viewModel = KeyboardPanelViewModel()
+    @State private var text = ""
+    @FocusState private var isInputFocused: Bool
+    
+    public init() {}
+    
+    public var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            
+            KeyboardPanelContainer(
+                viewModel: viewModel,
+                backgroundColor: Color(white: 0.15),
+                accessoryView: { context in
+                    customToolbar(context: context)
+                },
+                quickBarView: { context in
+                    if context.isKeyboardVisible || context.isPanelVisible {
+                        quickBar
+                    }
+                },
+                panelView: { context, panelId in
+                    panelContent(for: panelId)
+                }
+            )
+        }
+        .background(Color.black)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
+        .onChange(of: isInputFocused) { focused in
+            if focused && viewModel.panelState == .none {
+                viewModel.showKeyboard()
+            }
+        }
+        .onChange(of: viewModel.isTransitioning) { transitioning in
+            if transitioning {
+                isInputFocused = true
+            }
+        }
+    }
+    
+    private func customToolbar(context: KeyboardPanelContext) -> some View {
+        HStack(spacing: 12) {
+            TextField("说点什么...", text: $text, axis: .vertical)
+                .focused($isInputFocused)
+                .lineLimit(1...5)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(white: 0.25))
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+            
+            Button {
+                if context.currentPanelId == "emoji" {
+                    context.requestShowKeyboard()
+                } else {
+                    isInputFocused = false
+                    context.showPanel("emoji")
+                }
+            } label: {
+                Image(systemName: context.currentPanelId == "emoji" ? "keyboard" : "face.smiling")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+            }
+            
+            Button {
+                if context.currentPanelId == "more" {
+                    context.requestShowKeyboard()
+                } else {
+                    isInputFocused = false
+                    context.showPanel("more")
+                }
+            } label: {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(white: 0.15))
+    }
+    
+    private var quickBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(["😀", "😂", "🥰", "😎", "🤔", "👍"], id: \.self) { emoji in
+                    Button {
+                        text += emoji
+                    } label: {
+                        Text(emoji)
+                            .font(.system(size: 28))
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .background(Color(white: 0.15))
+    }
+    
+    @ViewBuilder
+    private func panelContent(for panelId: String) -> some View {
+        switch panelId {
+        case "emoji":
+            EmojiPanelView(onEmojiSelect: { text += $0 })
+        case "more":
+            morePanelView
+        default:
+            EmptyView()
+        }
+    }
+    
+    private var morePanelView: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 20) {
+            ForEach([("相册", "photo"), ("拍摄", "camera")], id: \.0) { item in
+                VStack(spacing: 8) {
+                    Image(systemName: item.1)
+                        .font(.system(size: 28))
+                        .frame(width: 56, height: 56)
+                        .background(Color(white: 0.25))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Text(item.0)
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
+                }
+            }
+        }
+        .padding(20)
+        .foregroundColor(.white)
+    }
+}

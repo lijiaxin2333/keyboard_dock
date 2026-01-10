@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var text = ""
     @State private var messages: [String] = ["欢迎使用 KeyboardPanelKit!", "点击输入框弹出键盘", "点击表情按钮切换表情面板"]
     @State private var recentEmojis: [String] = ["😊", "😂"]
+    @FocusState private var isInputFocused: Bool
     
     private let quickEmojis = ["😮", "😢", "😂", "😭", "🥰", "😍", "😊", "🥹", "😘", "😎"]
     
@@ -16,22 +17,101 @@ struct ContentView: View {
             VStack(spacing: 0) {
                 messageList
                 
-                KeyboardPanel(
+                KeyboardPanelContainer(
                     viewModel: viewModel,
-                    text: $text,
-                    panelItems: [.at, .emoji, .photo, .voice, .more],
-                    configuration: darkConfiguration,
-                    onSend: sendMessage,
-                    panelContent: { item in
-                        panelContentView(for: item)
+                    backgroundColor: Color(white: 0.15),
+                    accessoryView: { context in
+                        customToolbar(context: context)
                     },
-                    quickBarContent: {
-                        quickEmojiBar
+                    quickBarView: { context in
+                        if context.isKeyboardVisible || context.isPanelVisible {
+                            quickEmojiBar
+                        }
+                    },
+                    panelView: { context, panelId in
+                        panelContentView(for: panelId)
                     }
                 )
             }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
+        .onChange(of: isInputFocused) { focused in
+            if focused && viewModel.panelState == .none {
+                viewModel.showKeyboard()
+            }
+        }
+        .onChange(of: viewModel.isTransitioning) { transitioning in
+            if transitioning {
+                isInputFocused = true
+            }
+        }
+    }
+    
+    private func customToolbar(context: KeyboardPanelContext) -> some View {
+        HStack(spacing: 12) {
+            TextField("说点什么...", text: $text, axis: .vertical)
+                .focused($isInputFocused)
+                .lineLimit(1...5)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(white: 0.25))
+                .foregroundColor(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+            
+            toolButton(context: context, panelId: "at", icon: "at")
+            toolButton(context: context, panelId: "emoji", icon: "face.smiling", selectedIcon: "keyboard")
+            toolButton(context: context, panelId: "photo", icon: "photo")
+            toolButton(context: context, panelId: "voice", icon: "mic")
+            toolButton(context: context, panelId: "more", icon: "plus.circle")
+            
+            Button(action: sendMessage) {
+                Text("发送")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color(red: 0.55, green: 0.2, blue: 0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(white: 0.15))
+    }
+    
+    private func toolButton(context: KeyboardPanelContext, panelId: String, icon: String, selectedIcon: String? = nil) -> some View {
+        Button {
+            if context.currentPanelId == panelId {
+                context.requestShowKeyboard()
+            } else {
+                isInputFocused = false
+                context.showPanel(panelId)
+            }
+        } label: {
+            let isSelected = context.currentPanelId == panelId
+            Image(systemName: isSelected && selectedIcon != nil ? selectedIcon! : icon)
+                .font(.system(size: 22))
+                .foregroundColor(.white)
+                .frame(width: 32, height: 32)
+        }
+    }
+    
+    private var quickEmojiBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(quickEmojis, id: \.self) { emoji in
+                    Button {
+                        text += emoji
+                    } label: {
+                        Text(emoji)
+                            .font(.system(size: 28))
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
+        .background(Color(white: 0.15))
     }
     
     private var messageList: some View {
@@ -67,8 +147,8 @@ struct ContentView: View {
     }
     
     @ViewBuilder
-    private func panelContentView(for item: KeyboardPanelItem) -> some View {
-        switch item.id {
+    private func panelContentView(for panelId: String) -> some View {
+        switch panelId {
         case "emoji":
             EmojiPanelView(
                 recentEmojis: recentEmojis,
@@ -85,18 +165,7 @@ struct ContentView: View {
         case "more":
             morePanelView
         default:
-            placeholderPanel(for: item)
-        }
-    }
-    
-    private var quickEmojiBar: some View {
-        ForEach(quickEmojis, id: \.self) { emoji in
-            Button {
-                text += emoji
-            } label: {
-                Text(emoji)
-                    .font(.system(size: 28))
-            }
+            placeholderPanel(for: panelId)
         }
     }
     
@@ -127,12 +196,12 @@ struct ContentView: View {
         .foregroundColor(.white)
     }
     
-    private func placeholderPanel(for item: KeyboardPanelItem) -> some View {
+    private func placeholderPanel(for panelId: String) -> some View {
         VStack {
-            item.icon
+            Image(systemName: "questionmark.circle")
                 .font(.system(size: 48))
                 .foregroundColor(.gray)
-            Text(item.title ?? item.id)
+            Text(panelId)
                 .foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -142,14 +211,6 @@ struct ContentView: View {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         messages.append(text)
         text = ""
-    }
-    
-    private var darkConfiguration: KeyboardPanelAccessoryConfiguration {
-        KeyboardPanelAccessoryConfiguration(
-            placeholder: "说点什么...",
-            sendButtonTitle: "发送",
-            colors: .dark
-        )
     }
 }
 

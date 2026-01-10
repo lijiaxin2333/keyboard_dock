@@ -30,41 +30,30 @@ public struct KeyboardPanel<PanelContent: View, QuickBarContent: View>: View {
     }
     
     public var body: some View {
-        GeometryReader { geometry in
-            let bottomInset = geometry.safeAreaInsets.bottom
-            
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                
-                VStack(spacing: 0) {
-                    KeyboardAccessoryView(
-                        text: $text,
-                        isInputFocused: $isInputFocused,
-                        panelItems: panelItems,
-                        currentPanelState: viewModel.panelState,
-                        configuration: configuration,
-                        onPanelItemTap: handlePanelItemTap,
-                        onSend: onSend
-                    )
-                    
-                    if shouldShowQuickBar {
-                        KeyboardAccessoryQuickBar(backgroundColor: configuration.colors.panelBackground) {
-                            quickBarContent()
-                        }
-                    }
-                    
-                    panelContainer(bottomInset: bottomInset)
+        KeyboardPanelContainer(
+            viewModel: viewModel,
+            backgroundColor: configuration.colors.accessoryBackground,
+            accessoryView: { context in
+                KeyboardAccessoryView(
+                    text: $text,
+                    isInputFocused: $isInputFocused,
+                    panelItems: panelItems,
+                    context: context,
+                    configuration: configuration,
+                    onSend: onSend
+                )
+            },
+            quickBarView: { _ in
+                KeyboardAccessoryQuickBar(backgroundColor: configuration.colors.panelBackground) {
+                    quickBarContent()
                 }
-                .background(configuration.colors.accessoryBackground)
+            },
+            panelView: { _, panelId in
+                if let item = panelItems.first(where: { $0.id == panelId }) {
+                    panelContent(item)
+                }
             }
-            .onAppear {
-                viewModel.bottomSafeAreaHeight = bottomInset
-                viewModel.startMonitoring()
-            }
-            .onChange(of: geometry.safeAreaInsets.bottom) { newValue in
-                viewModel.bottomSafeAreaHeight = newValue
-            }
-        }
+        )
         .onChange(of: isInputFocused) { focused in
             if focused && viewModel.panelState == .none {
                 viewModel.showKeyboard()
@@ -74,51 +63,6 @@ public struct KeyboardPanel<PanelContent: View, QuickBarContent: View>: View {
             if transitioning {
                 isInputFocused = true
             }
-        }
-        .onDisappear {
-            viewModel.stopMonitoring()
-        }
-    }
-    
-    private var shouldShowQuickBar: Bool {
-        viewModel.panelState.isKeyboard || viewModel.panelState.isPanel || viewModel.isTransitioning
-    }
-    
-    @ViewBuilder
-    private func panelContainer(bottomInset: CGFloat) -> some View {
-        let displayHeight = max(0, viewModel.lastKnownKeyboardHeight - bottomInset)
-        
-        ZStack {
-            switch viewModel.panelState {
-            case .keyboard:
-                if viewModel.keyboardHeight > 0 {
-                    Color.clear
-                        .frame(height: max(0, viewModel.keyboardHeight - bottomInset))
-                } else if viewModel.isTransitioning {
-                    configuration.colors.panelBackground
-                        .frame(height: displayHeight)
-                }
-            case .panel(let item):
-                panelContent(item)
-                    .frame(height: displayHeight)
-                    .background(configuration.colors.panelBackground)
-                    .transition(.identity)
-            case .none:
-                if bottomInset > 0 {
-                    Color.clear
-                        .frame(height: bottomInset)
-                }
-            }
-        }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.panelState)
-    }
-    
-    private func handlePanelItemTap(_ item: KeyboardPanelItem) {
-        if viewModel.panelState.currentPanelId == item.id {
-            viewModel.requestShowKeyboard()
-        } else {
-            isInputFocused = false
-            viewModel.showPanel(item)
         }
     }
 }

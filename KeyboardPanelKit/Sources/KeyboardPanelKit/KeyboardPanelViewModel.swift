@@ -13,7 +13,7 @@ public final class KeyboardPanelViewModel: ObservableObject {
     private let focusController: KeyboardFocusControlling
     private var cancellables = Set<AnyCancellable>()
     private var pendingKeyboardShow: Bool = false
-    private var previousPanelItem: KeyboardPanelItem?
+    private var previousPanelId: String?
     
     public var bottomSafeAreaHeight: CGFloat = 0
     
@@ -73,7 +73,7 @@ public final class KeyboardPanelViewModel: ObservableObject {
             panelState = .keyboard
             isTransitioning = false
             pendingKeyboardShow = false
-            previousPanelItem = nil
+            previousPanelId = nil
         case .hiding:
             isKeyboardVisible = false
         }
@@ -88,25 +88,33 @@ public final class KeyboardPanelViewModel: ObservableObject {
         keyboardEventProvider.stopMonitoring()
     }
     
-    public func togglePanel(_ item: KeyboardPanelItem) {
-        if panelState.currentPanelId == item.id {
+    public func togglePanel(_ panelId: String) {
+        if panelState.currentPanelId == panelId {
             requestShowKeyboard()
         } else {
-            showPanel(item)
+            showPanel(panelId)
+        }
+    }
+    
+    public func togglePanel(_ item: KeyboardPanelItem) {
+        togglePanel(item.id)
+    }
+    
+    public func showPanel(_ panelId: String) {
+        focusController.dismissKeyboard()
+        previousPanelId = nil
+        withAnimation(.easeInOut(duration: animationDuration)) {
+            panelState = .panel(panelId)
         }
     }
     
     public func showPanel(_ item: KeyboardPanelItem) {
-        focusController.dismissKeyboard()
-        previousPanelItem = nil
-        withAnimation(.easeInOut(duration: animationDuration)) {
-            panelState = .panel(item)
-        }
+        showPanel(item.id)
     }
     
     public func requestShowKeyboard() {
-        if case .panel(let item) = panelState {
-            previousPanelItem = item
+        if let currentId = panelState.currentPanelId {
+            previousPanelId = currentId
         }
         pendingKeyboardShow = true
         isTransitioning = true
