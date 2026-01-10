@@ -59,7 +59,7 @@ public struct KeyboardPanelContext {
 }
 
 private struct KeyboardPanelContextKey: EnvironmentKey {
-    static var defaultValue: KeyboardPanelContext?
+    nonisolated(unsafe) static var defaultValue: KeyboardPanelContext?
 }
 
 extension EnvironmentValues {

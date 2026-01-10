@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct KeyboardPanelDemoView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = KeyboardPanelViewModel()
     @State private var text = ""
     @State private var messages: [String] = ["欢迎使用 KeyboardPanelKit!", "这是解耦后的新版本"]
@@ -35,6 +36,22 @@ public struct KeyboardPanelDemoView: View {
                     }
                 )
             }
+            
+            VStack {
+                HStack {
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.top, 8)
+                }
+                Spacer()
+            }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onChange(of: isInputFocused) { focused in
@@ -52,9 +69,8 @@ public struct KeyboardPanelDemoView: View {
     private func accessoryView(context: KeyboardPanelContext) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                TextField("说点什么...", text: $text, axis: .vertical)
+                textField
                     .focused($isInputFocused)
-                    .lineLimit(1...5)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(colors.inputBackground)
@@ -218,5 +234,15 @@ public struct KeyboardPanelDemoView: View {
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         messages.append(text)
         text = ""
+    }
+    
+    @ViewBuilder
+    private var textField: some View {
+        if #available(iOS 16.0, *) {
+            TextField("说点什么...", text: $text, axis: .vertical)
+                .lineLimit(1...5)
+        } else {
+            TextField("说点什么...", text: $text)
+        }
     }
 }

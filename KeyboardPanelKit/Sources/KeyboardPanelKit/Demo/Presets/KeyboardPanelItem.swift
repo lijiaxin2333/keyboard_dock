@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct KeyboardPanelItem: Identifiable, Equatable {
+public struct KeyboardPanelItem: Identifiable, Equatable, Sendable {
     public let id: String
     public let icon: Image
     public let selectedIcon: Image?

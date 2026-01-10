@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct KeyboardPanelAccessoryConfiguration {
+public struct KeyboardPanelAccessoryConfiguration: Sendable {
     public var placeholder: String
     public var sendButtonTitle: String
     public var colors: KeyboardPanelColors

@@ -41,15 +41,22 @@ public struct KeyboardAccessoryView: View {
         .padding(.vertical, configuration.verticalPadding)
     }
     
+    @ViewBuilder
     private var inputField: some View {
-        TextField(configuration.placeholder, text: $text, axis: .vertical)
-            .focused($isInputFocused)
-            .lineLimit(1...5)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(configuration.colors.inputBackground)
-            .foregroundColor(configuration.colors.inputText)
-            .clipShape(RoundedRectangle(cornerRadius: configuration.inputCornerRadius))
+        Group {
+            if #available(iOS 16.0, *) {
+                TextField(configuration.placeholder, text: $text, axis: .vertical)
+                    .lineLimit(1...5)
+            } else {
+                TextField(configuration.placeholder, text: $text)
+            }
+        }
+        .focused($isInputFocused)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(configuration.colors.inputBackground)
+        .foregroundColor(configuration.colors.inputText)
+        .clipShape(RoundedRectangle(cornerRadius: configuration.inputCornerRadius))
     }
     
     private var toolButtons: some View {

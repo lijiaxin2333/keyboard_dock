@@ -1,6 +1,6 @@
 import SwiftUI
 
-public struct KeyboardPanelColors {
+public struct KeyboardPanelColors: Sendable {
     public var accessoryBackground: Color
     public var panelBackground: Color
     public var inputBackground: Color
