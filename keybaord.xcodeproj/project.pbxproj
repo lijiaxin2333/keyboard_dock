@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		04BDC1752F11FCAD00371CED /* KeyboardPanelKit in Frameworks */ = {isa = PBXBuildFile; productRef = 04BDC1742F11FCAD00371CED /* KeyboardPanelKit */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		04BDC1652F11FC6D00371CED /* keybaord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = keybaord.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04BDC1752F11FCAD00371CED /* KeyboardPanelKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = keybaord;
 			packageProductDependencies = (
+				04BDC1742F11FCAD00371CED /* KeyboardPanelKit */,
 			);
 			productName = keybaord;
 			productReference = 04BDC1652F11FC6D00371CED /* keybaord.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 04BDC15C2F11FC6D00371CED;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				04BDC1732F11FCAD00371CED /* XCLocalSwiftPackageReference "KeyboardPanelKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 04BDC1662F11FC6D00371CED /* Products */;
 			projectDirPath = "";
@@ -332,6 +341,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		04BDC1732F11FCAD00371CED /* XCLocalSwiftPackageReference "KeyboardPanelKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = KeyboardPanelKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		04BDC1742F11FCAD00371CED /* KeyboardPanelKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KeyboardPanelKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 04BDC15D2F11FC6D00371CED /* Project object */;
 }

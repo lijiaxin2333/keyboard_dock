@@ -1,15 +1,16 @@
 import SwiftUI
-import KeyboardPanelKit
 
-struct ContentView: View {
+public struct KeyboardPanelDemoView: View {
     @StateObject private var viewModel = KeyboardPanelViewModel()
     @State private var text = ""
-    @State private var messages: [String] = ["欢迎使用 KeyboardPanelKit!", "点击输入框弹出键盘", "点击表情按钮切换表情面板"]
+    @State private var messages: [String] = []
     @State private var recentEmojis: [String] = ["😊", "😂"]
     
     private let quickEmojis = ["😮", "😢", "😂", "😭", "🥰", "😍", "😊", "🥹", "😘", "😎"]
     
-    var body: some View {
+    public init() {}
+    
+    public var body: some View {
         VStack(spacing: 0) {
             messageList
             
@@ -28,27 +29,18 @@ struct ContentView: View {
             )
         }
         .background(Color.black)
-        .ignoresSafeArea(.keyboard)
     }
     
     private var messageList: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(messages.indices, id: \.self) { index in
-                        messageBubble(messages[index])
-                            .id(index)
-                    }
-                }
-                .padding()
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .onChange(of: messages.count) { _ in
-                withAnimation {
-                    proxy.scrollTo(messages.count - 1, anchor: .bottom)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 12) {
+                ForEach(messages.indices, id: \.self) { index in
+                    messageBubble(messages[index])
                 }
             }
+            .padding()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private func messageBubble(_ message: String) -> some View {
@@ -148,8 +140,4 @@ struct ContentView: View {
             colors: .dark
         )
     }
-}
-
-#Preview {
-    ContentView()
 }
