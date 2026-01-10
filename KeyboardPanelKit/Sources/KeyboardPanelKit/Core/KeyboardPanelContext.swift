@@ -12,6 +12,11 @@ public struct KeyboardPanelContext {
     public let requestShowKeyboard: () -> Void
     public let dismiss: () -> Void
     
+    public var insertText: ((String) -> Void)?
+    public var clearContent: (() -> Void)?
+    
+    public var userInfo: [String: Any]
+    
     public var currentPanelId: String? {
         panelState.currentPanelId
     }
@@ -33,7 +38,10 @@ public struct KeyboardPanelContext {
         showPanel: @escaping (String) -> Void,
         showKeyboard: @escaping () -> Void,
         requestShowKeyboard: @escaping () -> Void,
-        dismiss: @escaping () -> Void
+        dismiss: @escaping () -> Void,
+        insertText: ((String) -> Void)? = nil,
+        clearContent: (() -> Void)? = nil,
+        userInfo: [String: Any] = [:]
     ) {
         self.panelState = panelState
         self.keyboardHeight = keyboardHeight
@@ -44,6 +52,9 @@ public struct KeyboardPanelContext {
         self.showKeyboard = showKeyboard
         self.requestShowKeyboard = requestShowKeyboard
         self.dismiss = dismiss
+        self.insertText = insertText
+        self.clearContent = clearContent
+        self.userInfo = userInfo
     }
 }
 

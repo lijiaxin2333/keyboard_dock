@@ -5,10 +5,11 @@ import Combine
 public final class KeyboardPanelViewModel: ObservableObject {
     @Published public var panelState: KeyboardPanelState = .none
     @Published public var keyboardHeight: CGFloat = 0
-    @Published public private(set) var lastKnownKeyboardHeight: CGFloat = 336
+    @Published public private(set) var lastKnownKeyboardHeight: CGFloat
     @Published public var isKeyboardVisible: Bool = false
     @Published public private(set) var isTransitioning: Bool = false
     
+    public let configuration: KeyboardPanelConfiguration
     private let keyboardEventProvider: KeyboardEventProviding
     private let focusController: KeyboardFocusControlling
     private var cancellables = Set<AnyCancellable>()
@@ -21,14 +22,13 @@ public final class KeyboardPanelViewModel: ObservableObject {
         max(0, lastKnownKeyboardHeight - bottomSafeAreaHeight)
     }
     
-    public var animationDuration: TimeInterval {
-        0.25
-    }
-    
     public init(
+        configuration: KeyboardPanelConfiguration = .default,
         keyboardEventProvider: KeyboardEventProviding? = nil,
         focusController: KeyboardFocusControlling? = nil
     ) {
+        self.configuration = configuration
+        self.lastKnownKeyboardHeight = configuration.defaultKeyboardHeight
         self.keyboardEventProvider = keyboardEventProvider ?? KeyboardEventProviderFactory.createProvider()
         self.focusController = focusController ?? KeyboardFocusControllerFactory.createController()
         setupBindings()
@@ -81,7 +81,10 @@ public final class KeyboardPanelViewModel: ObservableObject {
     
     public func startMonitoring() {
         keyboardEventProvider.startMonitoring()
-        lastKnownKeyboardHeight = keyboardEventProvider.lastKnownHeight
+        let providerHeight = keyboardEventProvider.lastKnownHeight
+        if providerHeight > 0 {
+            lastKnownKeyboardHeight = providerHeight
+        }
     }
     
     public func stopMonitoring() {
@@ -96,20 +99,12 @@ public final class KeyboardPanelViewModel: ObservableObject {
         }
     }
     
-    public func togglePanel(_ item: KeyboardPanelItem) {
-        togglePanel(item.id)
-    }
-    
     public func showPanel(_ panelId: String) {
         focusController.dismissKeyboard()
         previousPanelId = nil
-        withAnimation(.easeInOut(duration: animationDuration)) {
+        withAnimation(.easeInOut(duration: configuration.animationDuration)) {
             panelState = .panel(panelId)
         }
-    }
-    
-    public func showPanel(_ item: KeyboardPanelItem) {
-        showPanel(item.id)
     }
     
     public func requestShowKeyboard() {
@@ -126,7 +121,7 @@ public final class KeyboardPanelViewModel: ObservableObject {
     
     public func dismiss() {
         focusController.dismissKeyboard()
-        withAnimation(.easeInOut(duration: animationDuration)) {
+        withAnimation(.easeInOut(duration: configuration.animationDuration)) {
             panelState = .none
         }
     }

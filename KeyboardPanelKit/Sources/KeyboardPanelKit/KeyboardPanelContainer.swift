@@ -1,49 +1,37 @@
 import SwiftUI
 
-public struct KeyboardPanelContainer<
-    AccessoryView: View,
-    QuickBarView: View,
-    PanelView: View
->: View {
+public struct KeyboardPanelContainer<AccessoryView: View, PanelView: View>: View {
     @ObservedObject var viewModel: KeyboardPanelViewModel
     
-    let backgroundColor: Color
     let accessoryView: (KeyboardPanelContext) -> AccessoryView
-    let quickBarView: (KeyboardPanelContext) -> QuickBarView
     let panelView: (KeyboardPanelContext, String) -> PanelView
+    let contextBuilder: ((KeyboardPanelContext) -> KeyboardPanelContext)?
     
     public init(
         viewModel: KeyboardPanelViewModel,
-        backgroundColor: Color = Color(uiColor: .systemGray6),
+        contextBuilder: ((KeyboardPanelContext) -> KeyboardPanelContext)? = nil,
         @ViewBuilder accessoryView: @escaping (KeyboardPanelContext) -> AccessoryView,
-        @ViewBuilder quickBarView: @escaping (KeyboardPanelContext) -> QuickBarView,
         @ViewBuilder panelView: @escaping (KeyboardPanelContext, String) -> PanelView
     ) {
         self.viewModel = viewModel
-        self.backgroundColor = backgroundColor
+        self.contextBuilder = contextBuilder
         self.accessoryView = accessoryView
-        self.quickBarView = quickBarView
         self.panelView = panelView
     }
     
     public var body: some View {
         GeometryReader { geometry in
             let bottomInset = geometry.safeAreaInsets.bottom
-            let context = makeContext(bottomInset: bottomInset)
+            let baseContext = makeBaseContext(bottomInset: bottomInset)
+            let context = contextBuilder?(baseContext) ?? baseContext
             
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 
                 VStack(spacing: 0) {
                     accessoryView(context)
-                    
-                    if shouldShowQuickBar {
-                        quickBarView(context)
-                    }
-                    
                     panelContainer(context: context, bottomInset: bottomInset)
                 }
-                .background(backgroundColor)
             }
             .environment(\.keyboardPanelContext, context)
             .onAppear {
@@ -59,11 +47,7 @@ public struct KeyboardPanelContainer<
         }
     }
     
-    private var shouldShowQuickBar: Bool {
-        viewModel.panelState.isKeyboard || viewModel.panelState.isPanel || viewModel.isTransitioning
-    }
-    
-    private func makeContext(bottomInset: CGFloat) -> KeyboardPanelContext {
+    private func makeBaseContext(bottomInset: CGFloat) -> KeyboardPanelContext {
         KeyboardPanelContext(
             panelState: viewModel.panelState,
             keyboardHeight: viewModel.keyboardHeight,
@@ -89,60 +73,37 @@ public struct KeyboardPanelContainer<
     private func panelContainer(context: KeyboardPanelContext, bottomInset: CGFloat) -> some View {
         let displayHeight = context.panelDisplayHeight
         
-        ZStack {
-            switch viewModel.panelState {
-            case .keyboard:
-                if viewModel.keyboardHeight > 0 {
-                    Color.clear
-                        .frame(height: max(0, viewModel.keyboardHeight - bottomInset))
-                } else if viewModel.isTransitioning {
-                    backgroundColor
-                        .frame(height: displayHeight)
-                }
-            case .panel(let panelId):
-                panelView(context, panelId)
+        switch viewModel.panelState {
+        case .keyboard:
+            if viewModel.keyboardHeight > 0 {
+                Color.clear
+                    .frame(height: max(0, viewModel.keyboardHeight - bottomInset))
+            } else if viewModel.isTransitioning {
+                Color.clear
                     .frame(height: displayHeight)
-                    .background(backgroundColor)
-                    .transition(.identity)
-            case .none:
-                if bottomInset > 0 {
-                    Color.clear
-                        .frame(height: bottomInset)
-                }
+            }
+        case .panel(let panelId):
+            panelView(context, panelId)
+                .frame(height: displayHeight)
+        case .none:
+            if bottomInset > 0 {
+                Color.clear
+                    .frame(height: bottomInset)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.panelState)
     }
 }
 
-extension KeyboardPanelContainer where QuickBarView == EmptyView {
+extension KeyboardPanelContainer where PanelView == EmptyView {
     public init(
         viewModel: KeyboardPanelViewModel,
-        backgroundColor: Color = Color(uiColor: .systemGray6),
-        @ViewBuilder accessoryView: @escaping (KeyboardPanelContext) -> AccessoryView,
-        @ViewBuilder panelView: @escaping (KeyboardPanelContext, String) -> PanelView
-    ) {
-        self.init(
-            viewModel: viewModel,
-            backgroundColor: backgroundColor,
-            accessoryView: accessoryView,
-            quickBarView: { _ in EmptyView() },
-            panelView: panelView
-        )
-    }
-}
-
-extension KeyboardPanelContainer where QuickBarView == EmptyView, PanelView == EmptyView {
-    public init(
-        viewModel: KeyboardPanelViewModel,
-        backgroundColor: Color = Color(uiColor: .systemGray6),
+        contextBuilder: ((KeyboardPanelContext) -> KeyboardPanelContext)? = nil,
         @ViewBuilder accessoryView: @escaping (KeyboardPanelContext) -> AccessoryView
     ) {
         self.init(
             viewModel: viewModel,
-            backgroundColor: backgroundColor,
+            contextBuilder: contextBuilder,
             accessoryView: accessoryView,
-            quickBarView: { _ in EmptyView() },
             panelView: { _, _ in EmptyView() }
         )
     }

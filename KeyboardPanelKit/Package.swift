@@ -21,7 +21,7 @@ let package = Package(
                 "Keyboard/context_ai.md",
                 "Core/context_ai.md",
                 "Panel/context_ai.md",
-                "Accessory/context_ai.md",
+                "Bridge/context_ai.md",
                 "Demo/context_ai.md"
             ]
         ),
