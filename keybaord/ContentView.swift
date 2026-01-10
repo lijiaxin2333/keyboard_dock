@@ -10,25 +10,28 @@ struct ContentView: View {
     private let quickEmojis = ["😮", "😢", "😂", "😭", "🥰", "😍", "😊", "🥹", "😘", "😎"]
     
     var body: some View {
-        VStack(spacing: 0) {
-            messageList
+        ZStack {
+            Color.black.ignoresSafeArea()
             
-            KeyboardPanel(
-                viewModel: viewModel,
-                text: $text,
-                panelItems: [.at, .emoji, .photo, .voice, .more],
-                configuration: darkConfiguration,
-                onSend: sendMessage,
-                panelContent: { item in
-                    panelContentView(for: item)
-                },
-                quickBarContent: {
-                    quickEmojiBar
-                }
-            )
+            VStack(spacing: 0) {
+                messageList
+                
+                KeyboardPanel(
+                    viewModel: viewModel,
+                    text: $text,
+                    panelItems: [.at, .emoji, .photo, .voice, .more],
+                    configuration: darkConfiguration,
+                    onSend: sendMessage,
+                    panelContent: { item in
+                        panelContentView(for: item)
+                    },
+                    quickBarContent: {
+                        quickEmojiBar
+                    }
+                )
+            }
         }
-        .background(Color.black)
-        .ignoresSafeArea(.keyboard)
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
     
     private var messageList: some View {

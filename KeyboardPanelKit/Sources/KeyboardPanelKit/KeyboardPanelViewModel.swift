@@ -7,20 +7,18 @@ public final class KeyboardPanelViewModel: ObservableObject {
     @Published public var keyboardHeight: CGFloat = 0
     @Published public private(set) var lastKnownKeyboardHeight: CGFloat = 336
     @Published public var isKeyboardVisible: Bool = false
+    @Published public private(set) var isTransitioning: Bool = false
     
     private let keyboardEventProvider: KeyboardEventProviding
     private let focusController: KeyboardFocusControlling
     private var cancellables = Set<AnyCancellable>()
+    private var pendingKeyboardShow: Bool = false
+    private var previousPanelItem: KeyboardPanelItem?
     
-    public var currentPanelHeight: CGFloat {
-        switch panelState {
-        case .keyboard:
-            return keyboardHeight
-        case .panel:
-            return lastKnownKeyboardHeight
-        case .none:
-            return 0
-        }
+    public var bottomSafeAreaHeight: CGFloat = 0
+    
+    public var panelDisplayHeight: CGFloat {
+        max(0, lastKnownKeyboardHeight - bottomSafeAreaHeight)
     }
     
     public var animationDuration: TimeInterval {
@@ -50,18 +48,32 @@ public final class KeyboardPanelViewModel: ObservableObject {
         case .hidden:
             keyboardHeight = 0
             isKeyboardVisible = false
-            if panelState.isKeyboard {
+            if panelState.isKeyboard && !pendingKeyboardShow {
                 panelState = .none
+                isTransitioning = false
             }
-        case .showing(let info), .shown(let info):
+        case .showing(let info):
             keyboardHeight = info.height
             isKeyboardVisible = true
             if info.height > 0 {
                 lastKnownKeyboardHeight = info.height
             }
-            if panelState != .keyboard && !panelState.isPanel {
+            if pendingKeyboardShow || isTransitioning {
+                pendingKeyboardShow = false
+                panelState = .keyboard
+            } else if !panelState.isPanel && panelState != .keyboard {
                 panelState = .keyboard
             }
+        case .shown(let info):
+            keyboardHeight = info.height
+            isKeyboardVisible = true
+            if info.height > 0 {
+                lastKnownKeyboardHeight = info.height
+            }
+            panelState = .keyboard
+            isTransitioning = false
+            pendingKeyboardShow = false
+            previousPanelItem = nil
         case .hiding:
             isKeyboardVisible = false
         }
@@ -78,7 +90,7 @@ public final class KeyboardPanelViewModel: ObservableObject {
     
     public func togglePanel(_ item: KeyboardPanelItem) {
         if panelState.currentPanelId == item.id {
-            showKeyboard()
+            requestShowKeyboard()
         } else {
             showPanel(item)
         }
@@ -86,9 +98,18 @@ public final class KeyboardPanelViewModel: ObservableObject {
     
     public func showPanel(_ item: KeyboardPanelItem) {
         focusController.dismissKeyboard()
+        previousPanelItem = nil
         withAnimation(.easeInOut(duration: animationDuration)) {
             panelState = .panel(item)
         }
+    }
+    
+    public func requestShowKeyboard() {
+        if case .panel(let item) = panelState {
+            previousPanelItem = item
+        }
+        pendingKeyboardShow = true
+        isTransitioning = true
     }
     
     public func showKeyboard() {
